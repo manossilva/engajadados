@@ -357,23 +357,218 @@
 
     <div class="content">
 
-        <!-- ===== VÍDEO 9:16 ===== -->
-        <div class="section-label">
-            <div class="label-dot">▶</div>
-            Assista agora
+       <!-- ===== VÍDEO 9:16 ===== -->
+<div class="section-label">
+    <div class="label-dot">▶</div>
+    Assista agora
+</div>
+<div class="video-outer">
+    <div class="video-wrapper">
+        <video id="vslVideo"
+            autoplay
+            muted
+            playsinline
+            controlsList="nodownload"
+            poster="https://raoglzfmdxrynpwjmilp.supabase.co/storage/v1/object/public/FOTOS/Gemini_Generated_Image_m7ee5pm7ee5pm7ee%20(1)%20(1).png">
+            <source src="https://raoglzfmdxrynpwjmilp.supabase.co/storage/v1/object/public/FOTOS/copy-de8776c8-0fa7-4e76-a584-b096ccd7f52a_mpmG2W4Z.mp4" type="video/mp4">
+            Seu celular não suporta este vídeo.
+        </video>
+
+        <!-- Botão de volume central (aparece enquanto mutado) -->
+        <div id="unmuteBtn" class="unmute-overlay" onclick="toggleMute()">
+            <div class="unmute-pulse"></div>
+            <div class="unmute-icon">🔇</div>
+            <span class="unmute-text">Toque para ouvir</span>
         </div>
-        <div class="video-outer">
-            <div class="video-wrapper">
-                <video id="vslVideo"
-                    controls
-                    controlsList="nodownload"
-                    playsinline
-                    poster="https://raoglzfmdxrynpwjmilp.supabase.co/storage/v1/object/public/FOTOS/Gemini_Generated_Image_m7ee5pm7ee5pm7ee%20(1)%20(1).png">
-                    <source src="https://raoglzfmdxrynpwjmilp.supabase.co/storage/v1/object/public/FOTOS/copy-de8776c8-0fa7-4e76-a584-b096ccd7f52a_mpmG2W4Z.mp4" type="video/mp4">
-                    Seu celular não suporta este vídeo.
-                </video>
+
+        <!-- Overlay de pause com CTA -->
+        <div id="pauseOverlay" class="pause-overlay" style="display:none;">
+            <div class="pause-cta">
+                <p class="pause-title">👆 Gostou do que viu?</p>
+                <a href="https://wa.me/5579998667714?text=Olá%20Ramon,%20quero%20restaurar%20uma%20foto!"
+                   class="pause-btn">
+                    ✅ QUERO RESTAURAR MINHA FOTO
+                </a>
+                <button class="pause-resume" onclick="resumeVideo()">▶ Continuar assistindo</button>
             </div>
         </div>
+    </div>
+</div>
+
+<style>
+.video-wrapper {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+/* === BOTÃO DE VOLUME === */
+.unmute-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    z-index: 10;
+    animation: fadeInUp 1s ease forwards;
+}
+
+.unmute-pulse {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #00e676;
+    opacity: 0.4;
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+.unmute-icon {
+    width: 56px;
+    height: 56px;
+    background: #00e676;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 0 20px rgba(0,230,118,0.6);
+}
+
+.unmute-text {
+    font-size: 12px;
+    color: #fff;
+    background: rgba(0,0,0,0.6);
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes pulse {
+    0%   { transform: scale(1);   opacity: 0.4; }
+    50%  { transform: scale(1.6); opacity: 0;   }
+    100% { transform: scale(1);   opacity: 0.4; }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0);    }
+}
+
+/* === OVERLAY DE PAUSE === */
+.pause-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    animation: fadeIn 0.3s ease;
+}
+
+.pause-cta {
+    text-align: center;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.pause-title {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.pause-btn {
+    background: #25D366;
+    color: #fff;
+    padding: 16px 24px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 800;
+    text-decoration: none;
+    display: block;
+    box-shadow: 0 4px 20px rgba(37,211,102,0.5);
+    animation: pulseCTA 2s ease-in-out infinite;
+}
+
+.pause-resume {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.4);
+    color: rgba(255,255,255,0.7);
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+@keyframes pulseCTA {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.03); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+</style>
+
+<script>
+const video = document.getElementById('vslVideo');
+const unmuteBtn = document.getElementById('unmuteBtn');
+const pauseOverlay = document.getElementById('pauseOverlay');
+
+// Ativa autoplay assim que a página carrega
+window.addEventListener('load', () => {
+    video.play().catch(() => {
+        // Fallback: se o browser bloquear, mostra botão de play
+        unmuteBtn.innerHTML = `
+            <div class="unmute-pulse"></div>
+            <div class="unmute-icon">▶️</div>
+            <span class="unmute-text">Toque para assistir</span>
+        `;
+    });
+});
+
+// Alterna mudo/com som
+function toggleMute() {
+    video.muted = !video.muted;
+    if (!video.muted) {
+        unmuteBtn.style.opacity = '0';
+        unmuteBtn.style.pointerEvents = 'none';
+        setTimeout(() => unmuteBtn.style.display = 'none', 400);
+    }
+}
+
+// Detecta pause manual (não o pause do sistema)
+let userPaused = false;
+video.addEventListener('pause', () => {
+    if (!video.ended) {
+        pauseOverlay.style.display = 'flex';
+    }
+});
+
+video.addEventListener('play', () => {
+    pauseOverlay.style.display = 'none';
+});
+
+function resumeVideo() {
+    pauseOverlay.style.display = 'none';
+    video.play();
+}
+</script>
 
         <!-- CTA 1 -->
         <a href="https://wa.me/5579998667714?text=Olá%20Ramon,%20quero%20restaurar%20uma%20foto!" class="btn-whats">

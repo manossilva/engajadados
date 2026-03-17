@@ -18,6 +18,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
+<!-- hCaptcha (Supabase usa hCaptcha) -->
+<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+
 <!-- Boxicons -->
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
@@ -108,6 +111,16 @@ input:focus, select:focus { outline:none; border-color:var(--purple)!important; 
   font-size:12px; font-family:var(--font); margin-top:16px; font-weight:600;
 }
 .error-msg { color:var(--red); font-size:12px; margin-top:10px; min-height:18px; }
+.success-msg { color:var(--green); font-size:12px; margin-top:10px; min-height:18px; }
+.login-box .h-captcha { margin:14px 0 6px; display:flex; justify-content:center; }
+.btn-main:disabled { opacity:.5; cursor:not-allowed; }
+.login-loading { display:none; color:var(--text-soft); font-size:12px; margin-top:8px; }
+.login-loading.show { display:block; }
+.login-loading i { animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.debug-box { margin-top:12px; padding:10px; border-radius:8px; background:var(--surface-alt); border:1px solid var(--border); text-align:left; display:none; }
+.debug-box.show { display:block; }
+.debug-box pre { font-size:10px; color:var(--red); font-family:var(--mono); white-space:pre-wrap; word-break:break-all; }
 
 /* ═══════ LAYOUT ═══════ */
 #dashboard { display:none; min-height:100vh; }
@@ -274,9 +287,16 @@ input:focus, select:focus { outline:none; border-color:var(--purple)!important; 
     <div class="brand-sub">Meta Ads Dashboard</div>
     <input type="email" id="l-email" placeholder="E-mail">
     <input type="password" id="l-pass" placeholder="Senha">
+
+    <!-- hCaptcha: substitua o sitekey pelo seu (Supabase > Auth > Bot Protection) -->
+    <div class="h-captcha" data-sitekey="10000000-ffff-ffff-ffff-000000000001" data-theme="dark" id="captcha-box"></div>
+
     <button class="btn-main" id="btn-login">Entrar</button>
+    <div class="login-loading" id="login-loading"><i class='bx bx-loader-alt'></i> Processando...</div>
     <button class="btn-link" id="btn-toggle-auth">Criar conta</button>
     <div class="error-msg" id="auth-err"></div>
+    <div class="success-msg" id="auth-ok"></div>
+    <div class="debug-box" id="debug-box"><pre id="debug-text"></pre></div>
   </div>
 </div>
 
@@ -384,7 +404,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ── STATE ── */
 let currentUser = null;
-let clients = {};          // { id: { name, data:[] } }
+let clients = {};
 let activeId = null;
 let curView = 'semanal';
 let selAd = 'todos';
@@ -395,32 +415,131 @@ const $ = id => document.getElementById(id);
 /* ══════════ AUTH ══════════ */
 let isSignUp = false;
 
+function showErr(msg) {
+  $('auth-err').textContent = msg;
+  $('auth-ok').textContent = '';
+}
+function showOk(msg) {
+  $('auth-ok').textContent = msg;
+  $('auth-err').textContent = '';
+}
+function showDebug(obj) {
+  $('debug-box').classList.add('show');
+  $('debug-text').textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+}
+function setLoading(on) {
+  $('btn-login').disabled = on;
+  $('login-loading').classList.toggle('show', on);
+}
+
 $('btn-toggle-auth').onclick = () => {
   isSignUp = !isSignUp;
   $('btn-toggle-auth').textContent = isSignUp ? 'Ja tenho conta' : 'Criar conta';
   $('btn-login').textContent = isSignUp ? 'Cadastrar' : 'Entrar';
+  showErr(''); showOk('');
+  $('debug-box').classList.remove('show');
 };
 
 $('btn-login').onclick = async () => {
   const email = $('l-email').value.trim();
   const pass = $('l-pass').value;
-  $('auth-err').textContent = '';
-  const fn = isSignUp ? 'signUp' : 'signInWithPassword';
-  const { error } = await supabase.auth[fn]({ email, password: pass });
-  if (error) {
-    const m = {
-      'Invalid login credentials': 'Credenciais invalidas',
-      'User already registered': 'E-mail ja cadastrado',
-      'Password should be at least 6 characters': 'Senha minima 6 caracteres',
-      'Unable to validate email address: invalid format': 'E-mail invalido',
-    };
-    $('auth-err').textContent = m[error.message] || error.message;
+  showErr(''); showOk('');
+  $('debug-box').classList.remove('show');
+
+  // Validacoes basicas
+  if (!email) { showErr('Digite seu e-mail.'); return; }
+  if (!pass) { showErr('Digite sua senha.'); return; }
+  if (pass.length < 6) { showErr('A senha precisa ter no minimo 6 caracteres.'); return; }
+
+  // hCaptcha token (se o widget existir e estiver renderizado)
+  let captchaToken = null;
+  try {
+    if (typeof hcaptcha !== 'undefined') {
+      captchaToken = hcaptcha.getResponse();
+      if (!captchaToken) {
+        // Se o captcha nao tem resposta, pode ser que nao esteja habilitado no Supabase
+        // tenta sem captcha primeiro
+        captchaToken = null;
+      }
+    }
+  } catch(e) { /* hCaptcha nao carregou, prossegue sem */ }
+
+  setLoading(true);
+
+  try {
+    let result;
+    const authOpts = { email, password: pass };
+
+    // Se tem captcha token, adiciona
+    if (captchaToken) {
+      authOpts.options = { captchaToken };
+    }
+
+    if (isSignUp) {
+      result = await supabase.auth.signUp(authOpts);
+    } else {
+      result = await supabase.auth.signInWithPassword(authOpts);
+    }
+
+    const { data, error } = result;
+
+    if (error) {
+      // Mapeamento completo de erros do Supabase
+      const msgs = {
+        'Invalid login credentials': 'E-mail ou senha incorretos.',
+        'invalid_credentials': 'E-mail ou senha incorretos.',
+        'Email not confirmed': 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.',
+        'User already registered': 'Este e-mail ja esta cadastrado. Clique em "Ja tenho conta".',
+        'Password should be at least 6 characters': 'A senha precisa ter pelo menos 6 caracteres.',
+        'Unable to validate email address: invalid format': 'Formato de e-mail invalido.',
+        'Signup requires a valid password': 'Digite uma senha valida.',
+        'captcha_failed': 'Verificacao do captcha falhou. Complete o captcha e tente novamente.',
+        'captcha verification process failed': 'Falha na verificacao do captcha. Tente novamente.',
+        'AuthApiError': 'Erro de autenticacao. Verifique seus dados.',
+        'over_request_rate_limit': 'Muitas tentativas. Aguarde 1 minuto e tente novamente.',
+        'request_timeout': 'Tempo esgotado. Verifique sua conexao e tente novamente.',
+      };
+
+      // Tenta match exato, depois parcial
+      let friendlyMsg = msgs[error.message];
+      if (!friendlyMsg) {
+        for (const [key, val] of Object.entries(msgs)) {
+          if (error.message && error.message.toLowerCase().includes(key.toLowerCase())) {
+            friendlyMsg = val; break;
+          }
+        }
+      }
+      if (!friendlyMsg) friendlyMsg = error.message || 'Erro desconhecido ao autenticar.';
+
+      showErr(friendlyMsg);
+      showDebug({ code: error.status || error.code, message: error.message, hint: error.hint || null });
+
+      // Reset captcha
+      try { if (typeof hcaptcha !== 'undefined') hcaptcha.reset(); } catch(e) {}
+
+    } else if (isSignUp && data?.user && !data.session) {
+      // Signup OK mas precisa confirmar email
+      showOk('Conta criada! Verifique seu e-mail para confirmar antes de entrar.');
+      try { if (typeof hcaptcha !== 'undefined') hcaptcha.reset(); } catch(e) {}
+
+    } else if (data?.session) {
+      // Login OK - o onAuthStateChange vai cuidar do resto
+      showOk('Conectado! Carregando dashboard...');
+    }
+
+  } catch(e) {
+    showErr('Erro de conexao: ' + e.message);
+    showDebug({ type: 'network_error', message: e.message, stack: e.stack });
   }
+
+  setLoading(false);
 };
 
 $('btn-logout').onclick = async () => { await supabase.auth.signOut(); };
 
+// Listener de estado de autenticacao
 supabase.auth.onAuthStateChange((ev, session) => {
+  console.log('Auth event:', ev, session?.user?.email);
   currentUser = session?.user || null;
   if (currentUser) {
     $('login-screen').style.display = 'none';
@@ -442,7 +561,14 @@ async function loadClients() {
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro Firestore:', error);
+      // Se for erro de tabela nao encontrada, mostra instrucao
+      if (error.message && error.message.includes('does not exist')) {
+        alert('ERRO: A tabela "clients" nao existe no Supabase.\n\nVa ao SQL Editor do Supabase e rode a query CREATE TABLE que esta nos comentarios do codigo.');
+      }
+      throw error;
+    }
 
     clients = {};
     (data || []).forEach(r => { clients[r.id] = { name: r.name, data: r.data || [] }; });

@@ -3,12 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Virtus — Meta Ads Dashboard</title>
+<title>Engajamentes — Meta Ads Dashboard</title>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <!-- Chart.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -20,889 +18,731 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-<!-- Boxicons (flat style) -->
+<!-- Boxicons -->
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
 <!-- Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
+/* ═══════ TOKENS ═══════ */
 :root {
-  --bg: #09090F;
-  --surface: #110F1D;
-  --surface-alt: #18142A;
-  --surface-hover: #211C38;
-  --border: #2A2448;
-  --border-light: #3B3260;
-  --purple: #8B5CF6;
-  --purple-dark: #6D28D9;
-  --purple-glow: rgba(139,92,246,.12);
-  --gold: #D4A843;
-  --gold-light: #E8C56D;
-  --gold-glow: rgba(212,168,67,.1);
+  --bg: #08070E;
+  --surface: #0F0D1A;
+  --surface-alt: #161326;
+  --surface-hover: #1E1A34;
+  --border: #262044;
+  --border-light: #362E5C;
+
+  /* Roxo Newmentes */
+  --purple: #7C3AED;
+  --purple-dark: #5B21B6;
+  --purple-deep: #3B0F7A;
+  --purple-glow: rgba(124,58,237,.12);
+  --purple-soft: #A78BFA;
+
+  /* Dourado Ouro */
+  --gold: #D4AF37;
+  --gold-light: #E8C84A;
+  --gold-deep: #B8952F;
+  --gold-glow: rgba(212,175,55,.10);
+
   --green: #22C97A;
   --green-bg: rgba(34,201,122,.08);
-  --red: #F04858;
-  --red-bg: rgba(240,72,88,.08);
+  --red: #EF4444;
+  --red-bg: rgba(239,68,68,.08);
+  --cyan: #22D3EE;
+  --orange: #F97316;
+
   --text: #FFFFFF;
-  --text-soft: #C0B6DA;
-  --text-dim: #6B5F8A;
-  --font: 'Plus Jakarta Sans', sans-serif;
+  --text-soft: #C4B5E2;
+  --text-dim: #6E5D94;
+  --font: 'Outfit', sans-serif;
   --mono: 'IBM Plex Mono', monospace;
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: var(--font); background: var(--bg); color: var(--text); min-height:100vh; }
-::-webkit-scrollbar { width:6px; height:6px; }
-::-webkit-scrollbar-track { background: var(--surface); }
-::-webkit-scrollbar-thumb { background: var(--border-light); border-radius:10px; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; }
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:var(--surface); }
+::-webkit-scrollbar-thumb { background:var(--border-light); border-radius:10px; }
+input:focus, select:focus { outline:none; border-color:var(--purple)!important; }
 
-/* ── LOGIN ── */
+/* ═══════ LOGIN ═══════ */
 #login-screen {
   display:flex; align-items:center; justify-content:center; min-height:100vh;
-  background: linear-gradient(160deg, var(--bg) 0%, #0D0A1A 40%, #130F24 100%);
+  background: radial-gradient(ellipse at 30% 20%, rgba(124,58,237,.08) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 80%, rgba(212,175,55,.05) 0%, transparent 50%),
+              var(--bg);
 }
 .login-box {
-  background: var(--surface); border:1px solid var(--border); border-radius:20px;
+  background:var(--surface); border:1px solid var(--border); border-radius:20px;
   padding:44px 40px; width:400px; max-width:92vw; text-align:center;
+  box-shadow: 0 0 80px rgba(124,58,237,.06);
 }
-.login-box .logo { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:28px; }
-.login-box .logo-icon {
-  width:44px; height:44px; border-radius:12px;
-  background: linear-gradient(135deg, var(--purple), var(--gold));
+.brand { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:8px; }
+.brand-icon {
+  width:46px; height:46px; border-radius:13px;
+  background:linear-gradient(135deg, var(--purple) 0%, var(--gold) 100%);
   display:flex; align-items:center; justify-content:center;
-  font-size:20px; font-weight:900; color:#fff;
+  font-size:22px; font-weight:900; color:#fff;
 }
-.login-box .logo-text { font-size:22px; font-weight:800; letter-spacing:.04em; }
-.login-box .logo-text span { color: var(--gold); }
-.login-box h2 { font-size:15px; color:var(--text-soft); font-weight:500; margin-bottom:28px; }
+.brand-name { font-size:24px; font-weight:900; letter-spacing:.03em; }
+.brand-name .nm { color:var(--purple-soft); }
+.brand-name .es { color:var(--gold); }
+.brand-sub { font-size:11px; color:var(--text-dim); font-weight:500; margin-bottom:28px; letter-spacing:.06em; text-transform:uppercase; }
 .login-box input {
   width:100%; padding:13px 16px; border-radius:12px; border:1px solid var(--border);
   background:var(--surface-alt); color:var(--text); font-size:14px; font-family:var(--font);
-  margin-bottom:12px; outline:none; transition:border-color .2s;
+  margin-bottom:12px; transition:border-color .2s;
 }
-.login-box input:focus { border-color:var(--purple); }
-.login-box .btn-login {
+.btn-main {
   width:100%; padding:14px; border-radius:12px; border:none; cursor:pointer;
-  background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+  background:linear-gradient(135deg, var(--purple), var(--purple-dark));
   color:#fff; font-size:14px; font-weight:700; font-family:var(--font);
-  margin-top:8px; transition:opacity .2s;
+  margin-top:6px; transition:opacity .2s;
 }
-.login-box .btn-login:hover { opacity:.9; }
-.login-box .btn-link {
+.btn-main:hover { opacity:.9; }
+.btn-link {
   background:none; border:none; color:var(--gold); cursor:pointer;
   font-size:12px; font-family:var(--font); margin-top:16px; font-weight:600;
 }
-.login-box .error-msg { color:var(--red); font-size:12px; margin-top:10px; min-height:18px; }
+.error-msg { color:var(--red); font-size:12px; margin-top:10px; min-height:18px; }
 
-/* ── DASHBOARD LAYOUT ── */
+/* ═══════ LAYOUT ═══════ */
 #dashboard { display:none; min-height:100vh; }
 #dashboard.active { display:flex; }
+
 .sidebar {
-  width:260px; background:var(--surface); border-right:1px solid var(--border);
+  width:264px; background:var(--surface); border-right:1px solid var(--border);
   display:flex; flex-direction:column; flex-shrink:0; transition:width .3s; overflow:hidden;
 }
 .sidebar.closed { width:0; }
-.sidebar-header {
+.sb-head {
   padding:20px 16px 16px; border-bottom:1px solid var(--border);
   display:flex; align-items:center; gap:10px;
 }
-.sidebar-header .s-logo {
-  width:36px; height:36px; border-radius:10px;
-  background: linear-gradient(135deg, var(--purple), var(--gold));
+.sb-logo {
+  width:38px; height:38px; border-radius:11px; flex-shrink:0;
+  background:linear-gradient(135deg, var(--purple) 0%, var(--gold) 100%);
   display:flex; align-items:center; justify-content:center;
-  font-size:16px; font-weight:900; color:#fff; flex-shrink:0;
+  font-size:17px; font-weight:900; color:#fff;
 }
-.sidebar-header .s-info .s-title { font-size:14px; font-weight:800; letter-spacing:.03em; }
-.sidebar-header .s-info .s-sub { font-size:10px; color:var(--text-dim); font-weight:500; }
-.sidebar-clients { flex:1; overflow-y:auto; padding:14px 10px; }
-.sidebar-clients .sec-label {
-  font-size:10px; color:var(--text-dim); font-weight:700;
-  text-transform:uppercase; letter-spacing:.1em; padding:0 8px; margin-bottom:10px;
+.sb-title { font-size:14px; font-weight:800; letter-spacing:.03em; }
+.sb-sub { font-size:9px; color:var(--text-dim); font-weight:600; text-transform:uppercase; letter-spacing:.08em; }
+.sb-clients { flex:1; overflow-y:auto; padding:14px 10px; }
+.sb-label {
+  font-size:9px; color:var(--text-dim); font-weight:700;
+  text-transform:uppercase; letter-spacing:.12em; padding:0 8px; margin-bottom:10px;
 }
-.client-btn {
+.c-btn {
   width:100%; text-align:left; padding:10px 12px; border-radius:10px;
   border:none; background:transparent; color:var(--text-soft); font-weight:500;
   font-size:13px; cursor:pointer; font-family:var(--font); transition:all .15s;
-  border-left:3px solid transparent; display:flex; align-items:center; gap:8px;
+  border-left:3px solid transparent; display:flex; align-items:center; gap:9px;
 }
-.client-btn:hover { background:var(--surface-hover); }
-.client-btn.active {
-  background:var(--purple-glow); color:var(--purple); font-weight:700;
-  border-left-color:var(--purple);
-}
-.client-btn .dot {
-  width:8px; height:8px; border-radius:50%; background:var(--text-dim); flex-shrink:0;
-}
-.client-btn.active .dot { background:var(--purple); }
-.sidebar-footer { padding:10px 14px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px; }
+.c-btn:hover { background:var(--surface-hover); }
+.c-btn.active { background:var(--purple-glow); color:var(--purple-soft); font-weight:700; border-left-color:var(--purple); }
+.c-dot { width:8px; height:8px; border-radius:50%; background:var(--text-dim); flex-shrink:0; }
+.c-btn.active .c-dot { background:var(--purple); box-shadow:0 0 6px var(--purple); }
+
+.sb-foot { padding:10px 14px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px; }
 .btn-gold {
   width:100%; padding:11px; border-radius:10px; border:none; cursor:pointer;
-  background: linear-gradient(135deg, var(--gold), #B8892E);
-  color:#000; font-weight:700; font-size:12px; font-family:var(--font);
+  background:linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%);
+  color:#0A0814; font-weight:700; font-size:12px; font-family:var(--font);
   display:flex; align-items:center; justify-content:center; gap:6px;
+  box-shadow:0 2px 12px rgba(212,175,55,.15);
 }
 .btn-purple {
   width:100%; padding:11px; border-radius:10px; border:none; cursor:pointer;
-  background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+  background:linear-gradient(135deg, var(--purple), var(--purple-dark));
   color:#fff; font-weight:700; font-size:12px; font-family:var(--font);
   display:flex; align-items:center; justify-content:center; gap:6px;
+  box-shadow:0 2px 12px rgba(124,58,237,.15);
 }
-.btn-outline {
+.btn-o {
   padding:7px 15px; border-radius:8px; border:1px solid var(--border);
   background:transparent; color:var(--text-soft); font-weight:600;
   font-size:12px; cursor:pointer; font-family:var(--font); transition:all .2s;
 }
-.btn-outline:hover { border-color:var(--purple); color:var(--purple); }
-.btn-outline.active { border-color:var(--purple); color:var(--purple); background:var(--purple-glow); }
+.btn-o:hover { border-color:var(--purple); color:var(--purple-soft); }
+.btn-o.on { border-color:var(--purple); color:var(--purple-soft); background:var(--purple-glow); }
 
 .main { flex:1; overflow:auto; display:flex; flex-direction:column; }
-.main-header {
+.m-head {
   padding:14px 24px; border-bottom:1px solid var(--border); background:var(--surface);
   display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
 }
-.main-header .left { display:flex; align-items:center; gap:12px; }
-.toggle-btn {
-  background:none; border:1px solid var(--border); border-radius:8px;
-  color:var(--text-soft); padding:6px 10px; cursor:pointer; font-size:18px;
+.m-head .left { display:flex; align-items:center; gap:12px; }
+.m-toggle { background:none; border:1px solid var(--border); border-radius:8px; color:var(--text-soft); padding:6px 10px; cursor:pointer; font-size:18px; }
+.m-head h1 { font-size:18px; font-weight:800; }
+.m-head h1 .gold { color:var(--gold); }
+.m-sub { font-size:11px; color:var(--text-dim); }
+.m-right { display:flex; align-items:center; gap:10px; }
+.views { display:flex; gap:5px; flex-wrap:wrap; }
+.btn-logout {
+  background:none; border:1px solid var(--border); border-radius:8px; color:var(--text-dim);
+  padding:6px 12px; cursor:pointer; font-size:12px; font-family:var(--font);
+  display:flex; align-items:center; gap:4px; transition:all .2s;
 }
-.main-header h1 { font-size:18px; font-weight:800; }
-.main-header .subtitle { font-size:11px; color:var(--text-dim); }
-.main-header .views { display:flex; gap:5px; flex-wrap:wrap; }
+.btn-logout:hover { border-color:var(--red); color:var(--red); }
+
 .content { padding:18px 24px; display:flex; flex-direction:column; gap:18px; }
-
-/* ── METRIC CARDS ── */
-.metrics-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
-.metric-card {
-  background:var(--surface); border:1px solid var(--border); border-radius:14px;
-  padding:16px 18px; display:flex; flex-direction:column; gap:5px; transition:border-color .2s;
-}
-.metric-card:hover { border-color:var(--gold); }
-.metric-card .mc-top { display:flex; justify-content:space-between; align-items:center; }
-.metric-card .mc-label {
-  font-size:10px; color:var(--text-dim); font-weight:700; text-transform:uppercase; letter-spacing:.06em;
-}
-.metric-card .mc-icon { font-size:18px; color:var(--gold); }
-.metric-card .mc-value { font-size:22px; font-weight:700; font-family:var(--mono); color:var(--text); }
-.metric-card .mc-change {
-  display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:700;
-  padding:2px 7px; border-radius:6px; width:fit-content;
-}
-.mc-change.up { color:var(--green); background:var(--green-bg); }
-.mc-change.down { color:var(--red); background:var(--red-bg); }
-
-/* ── CHARTS ── */
-.charts-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-.chart-box {
-  background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px;
-}
-.chart-box h3 { font-size:12px; font-weight:700; color:var(--text-soft); margin-bottom:12px; }
-.chart-box canvas { width:100%!important; max-height:240px; }
-
-/* ── TABLE ── */
-.table-wrap {
-  background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden;
-}
-.table-wrap .tw-head { padding:14px 18px; border-bottom:1px solid var(--border); }
-.table-wrap .tw-head h3 { font-size:12px; font-weight:700; color:var(--text-soft); }
-.table-wrap table { width:100%; border-collapse:collapse; font-size:12px; font-family:var(--mono); }
-.table-wrap thead tr { background:var(--surface-alt); }
-.table-wrap th {
-  padding:10px 14px; text-align:left; color:var(--text-dim); font-weight:600;
-  font-size:10px; text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid var(--border);
-}
-.table-wrap td { padding:10px 14px; border-bottom:1px solid var(--border); color:var(--text-soft); }
-.table-wrap tbody tr:hover { background:var(--surface-hover); }
-.td-label { color:var(--text)!important; font-weight:600; font-family:var(--font)!important; }
-.td-accent { color:var(--purple)!important; }
-.td-green { color:var(--green)!important; font-weight:700; }
-.td-gold { color:var(--gold)!important; }
-.td-cyan { color:#00D4E6!important; }
-
-/* ── FILTER BAR ── */
 .filter-bar { display:flex; gap:5px; flex-wrap:wrap; }
 
-/* ── MODAL ── */
-.modal-overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,.7); display:none;
-  align-items:center; justify-content:center; z-index:999; backdrop-filter:blur(5px);
+/* ═══════ METRICS ═══════ */
+.mg { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
+.mc {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:16px 18px; display:flex; flex-direction:column; gap:5px; transition:border-color .25s;
+  position:relative; overflow:hidden;
 }
-.modal-overlay.show { display:flex; }
-.modal-box {
+.mc::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, var(--purple), var(--gold)); opacity:0; transition:opacity .25s;
+}
+.mc:hover { border-color:var(--gold-deep); }
+.mc:hover::before { opacity:1; }
+.mc-top { display:flex; justify-content:space-between; align-items:center; }
+.mc-label { font-size:10px; color:var(--text-dim); font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+.mc-icon { font-size:18px; color:var(--gold); }
+.mc-val { font-size:22px; font-weight:700; font-family:var(--mono); }
+.mc-chg { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; width:fit-content; }
+.mc-chg.up { color:var(--green); background:var(--green-bg); }
+.mc-chg.dn { color:var(--red); background:var(--red-bg); }
+
+/* ═══════ CHARTS ═══════ */
+.cr { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.cb { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; }
+.cb h3 { font-size:12px; font-weight:700; color:var(--text-soft); margin-bottom:12px; }
+.cb canvas { width:100%!important; max-height:240px; }
+
+/* ═══════ TABLE ═══════ */
+.tw { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+.tw-h { padding:14px 18px; border-bottom:1px solid var(--border); }
+.tw-h h3 { font-size:12px; font-weight:700; color:var(--text-soft); }
+.tw table { width:100%; border-collapse:collapse; font-size:12px; font-family:var(--mono); }
+.tw thead tr { background:var(--surface-alt); }
+.tw th { padding:10px 14px; text-align:left; color:var(--text-dim); font-weight:600; font-size:10px; text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid var(--border); }
+.tw td { padding:10px 14px; border-bottom:1px solid var(--border); color:var(--text-soft); }
+.tw tbody tr:hover { background:var(--surface-hover); }
+
+/* ═══════ MODAL ═══════ */
+.mo { position:fixed; inset:0; background:rgba(0,0,0,.72); display:none; align-items:center; justify-content:center; z-index:999; backdrop-filter:blur(6px); }
+.mo.show { display:flex; }
+.mb {
   background:var(--surface); border:1px solid var(--border-light); border-radius:18px;
   padding:30px 32px; width:440px; max-width:92vw;
+  box-shadow:0 0 60px rgba(124,58,237,.08);
 }
-.modal-box h2 { font-size:17px; font-weight:800; margin-bottom:5px; }
-.modal-box p { font-size:12px; color:var(--text-dim); margin-bottom:18px; line-height:1.5; }
-.modal-box input[type=text], .modal-box select {
+.mb h2 { font-size:17px; font-weight:800; margin-bottom:5px; display:flex; align-items:center; gap:8px; }
+.mb h2 i { color:var(--gold); }
+.mb p { font-size:12px; color:var(--text-dim); margin-bottom:18px; line-height:1.5; }
+.mb input[type=text], .mb select {
   width:100%; padding:11px 14px; border-radius:10px; border:1px solid var(--border);
-  background:var(--surface-alt); color:var(--text); font-size:13px; font-family:var(--font);
-  margin-bottom:10px; outline:none;
+  background:var(--surface-alt); color:var(--text); font-size:13px; font-family:var(--font); margin-bottom:10px;
 }
-.modal-box select option { background:var(--surface); color:var(--text); }
-.modal-box .btn-file {
+.mb select option { background:var(--surface); }
+.mb .bf {
   width:100%; padding:12px; border-radius:10px; border:1px solid var(--purple);
-  background:var(--purple-glow); color:var(--purple); font-weight:700; font-size:13px;
+  background:var(--purple-glow); color:var(--purple-soft); font-weight:700; font-size:13px;
   cursor:pointer; font-family:var(--font); display:flex; align-items:center; justify-content:center; gap:6px;
 }
-.modal-box .btn-cancel {
+.mb .bc {
   width:100%; padding:10px; border-radius:10px; border:1px solid var(--border);
   background:transparent; color:var(--text-dim); font-weight:600; font-size:12px;
   cursor:pointer; font-family:var(--font); margin-top:6px;
 }
-.btn-logout {
-  background:none; border:1px solid var(--border); border-radius:8px; color:var(--text-dim);
-  padding:6px 12px; cursor:pointer; font-size:12px; font-family:var(--font);
-  display:flex; align-items:center; gap:4px;
-}
-.btn-logout:hover { border-color:var(--red); color:var(--red); }
 
-@media(max-width:768px) {
+@media(max-width:800px) {
   .sidebar { position:fixed; z-index:100; height:100vh; }
-  .charts-row { grid-template-columns:1fr; }
-  .metrics-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+  .cr { grid-template-columns:1fr; }
+  .mg { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
 }
 </style>
 </head>
 <body>
 
-<!-- ═══════ LOGIN SCREEN ═══════ -->
+<!-- ══════════ LOGIN ══════════ -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="logo">
-      <div class="logo-icon">V</div>
-      <div class="logo-text">VIRTUS<span>.</span></div>
+    <div class="brand">
+      <div class="brand-icon">E</div>
+      <div class="brand-name"><span class="nm">Engaja</span><span class="es">mentes</span></div>
     </div>
-    <h2>Meta Ads Dashboard</h2>
-    <input type="email" id="login-email" placeholder="E-mail">
-    <input type="password" id="login-pass" placeholder="Senha">
-    <button class="btn-login" id="btn-login">Entrar</button>
+    <div class="brand-sub">Meta Ads Dashboard</div>
+    <input type="email" id="l-email" placeholder="E-mail">
+    <input type="password" id="l-pass" placeholder="Senha">
+    <button class="btn-main" id="btn-login">Entrar</button>
     <button class="btn-link" id="btn-toggle-auth">Criar conta</button>
-    <div class="error-msg" id="auth-error"></div>
+    <div class="error-msg" id="auth-err"></div>
   </div>
 </div>
 
-<!-- ═══════ DASHBOARD ═══════ -->
+<!-- ══════════ DASHBOARD ══════════ -->
 <div id="dashboard">
-  <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="s-logo">V</div>
-      <div class="s-info">
-        <div class="s-title">VIRTUS</div>
-        <div class="s-sub">META ADS MANAGER</div>
+    <div class="sb-head">
+      <div class="sb-logo">E</div>
+      <div>
+        <div class="sb-title">ENGAJAMENTES</div>
+        <div class="sb-sub">Meta Ads Manager</div>
       </div>
     </div>
-    <div class="sidebar-clients">
-      <div class="sec-label">Clientes</div>
+    <div class="sb-clients">
+      <div class="sb-label">Clientes</div>
       <div id="client-list"></div>
     </div>
-    <div class="sidebar-footer">
-      <button class="btn-gold" id="btn-open-import">
-        <i class='bx bx-upload'></i> Importar CSV
-      </button>
-      <button class="btn-purple" id="btn-pdf">
-        <i class='bx bx-file'></i> Gerar Relatório PDF
-      </button>
+    <div class="sb-foot">
+      <button class="btn-gold" id="btn-import"><i class='bx bx-upload'></i> Importar CSV</button>
+      <button class="btn-purple" id="btn-pdf"><i class='bx bx-file'></i> Gerar Relatorio PDF</button>
     </div>
   </div>
 
-  <!-- Main -->
   <div class="main">
-    <div class="main-header">
+    <div class="m-head">
       <div class="left">
-        <button class="toggle-btn" id="btn-toggle-sidebar"><i class='bx bx-menu'></i></button>
+        <button class="m-toggle" id="btn-sidebar"><i class='bx bx-menu'></i></button>
         <div>
-          <h1 id="client-title">—</h1>
-          <div class="subtitle">Meta Ads • Plataforma de Anúncios</div>
+          <h1 id="c-title">—</h1>
+          <div class="m-sub"><i class='bx bxl-meta' style="font-size:13px;vertical-align:middle;margin-right:2px"></i> Meta Ads — Plataforma de Anuncios</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;">
+      <div class="m-right">
         <div class="views" id="view-btns"></div>
         <button class="btn-logout" id="btn-logout"><i class='bx bx-log-out'></i> Sair</button>
       </div>
     </div>
-
-    <div class="content" id="content">
-      <div class="filter-bar" id="filter-bar"></div>
-      <div class="metrics-grid" id="metrics-grid"></div>
-      <div class="charts-row" id="charts-row-1">
-        <div class="chart-box"><h3 id="ch1-title">Investimento</h3><canvas id="chart-invest"></canvas></div>
-        <div class="chart-box"><h3 id="ch2-title">ROAS</h3><canvas id="chart-roas"></canvas></div>
+    <div class="content">
+      <div class="filter-bar" id="fbar"></div>
+      <div class="mg" id="metrics"></div>
+      <div class="cr">
+        <div class="cb"><h3 id="t-inv">Investimento</h3><canvas id="ch-inv"></canvas></div>
+        <div class="cb"><h3 id="t-roas">ROAS</h3><canvas id="ch-roas"></canvas></div>
       </div>
-      <div class="charts-row" id="charts-row-2">
-        <div class="chart-box"><h3>CPA (Custo por Aquisição)</h3><canvas id="chart-cpa"></canvas></div>
-        <div class="chart-box"><h3>Conversões</h3><canvas id="chart-conv"></canvas></div>
+      <div class="cr">
+        <div class="cb"><h3>CPA (Custo por Aquisicao)</h3><canvas id="ch-cpa"></canvas></div>
+        <div class="cb"><h3>Conversoes</h3><canvas id="ch-conv"></canvas></div>
       </div>
-      <div class="charts-row" id="charts-row-3">
-        <div class="chart-box"><h3>Distribuição de Investimento</h3><canvas id="chart-pie"></canvas></div>
-        <div class="chart-box"><h3>CTR por Período</h3><canvas id="chart-ctr"></canvas></div>
+      <div class="cr">
+        <div class="cb"><h3>Distribuicao de Investimento</h3><canvas id="ch-pie"></canvas></div>
+        <div class="cb"><h3>CTR por Periodo</h3><canvas id="ch-ctr"></canvas></div>
       </div>
-      <div class="table-wrap">
-        <div class="tw-head"><h3 id="table-title">Dados Detalhados</h3></div>
-        <div style="overflow-x:auto"><table id="data-table"><thead></thead><tbody></tbody></table></div>
+      <div class="tw">
+        <div class="tw-h"><h3 id="tb-title">Dados Detalhados</h3></div>
+        <div style="overflow-x:auto"><table id="dtable"><thead></thead><tbody></tbody></table></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══════ IMPORT MODAL ═══════ -->
-<div class="modal-overlay" id="import-modal">
-  <div class="modal-box">
-    <h2><i class='bx bx-upload' style="color:var(--gold);margin-right:6px"></i>Importar Dados CSV</h2>
-    <p>Exporte os dados do Meta Ads Manager e importe aqui. Selecione o cliente ou crie um novo.</p>
-    <select id="import-client-select">
+<!-- ══════════ IMPORT MODAL ══════════ -->
+<div class="mo" id="import-modal">
+  <div class="mb">
+    <h2><i class='bx bx-cloud-upload'></i> Importar Dados CSV</h2>
+    <p>Exporte do Meta Ads Manager e importe aqui. Selecione o cliente existente ou crie um novo.</p>
+    <label style="font-size:11px;color:var(--text-dim);font-weight:600;margin-bottom:4px;display:block">Para qual cliente?</label>
+    <select id="imp-sel">
       <option value="__new">+ Novo cliente</option>
     </select>
-    <input type="text" id="import-new-name" placeholder="Nome do novo cliente">
-    <input type="file" id="import-file" accept=".csv,.tsv,.txt" style="display:none">
-    <button class="btn-file" id="btn-select-file"><i class='bx bx-cloud-upload'></i> Selecionar Arquivo CSV</button>
-    <button class="btn-cancel" id="btn-cancel-import">Cancelar</button>
+    <input type="text" id="imp-name" placeholder="Nome do novo cliente">
+    <input type="file" id="imp-file" accept=".csv,.tsv,.txt" style="display:none">
+    <button class="bf" id="btn-file"><i class='bx bx-cloud-upload'></i> Selecionar Arquivo CSV</button>
+    <button class="bc" id="btn-cancel-imp">Cancelar</button>
   </div>
 </div>
 
 <script>
-/* ╔══════════════════════════════════════════════════════════════╗
-   ║  FIREBASE CONFIG — SUBSTITUIR COM SEUS DADOS               ║
-   ║  1. Crie um projeto em https://console.firebase.google.com  ║
-   ║  2. Ative Authentication > Email/Password                   ║
-   ║  3. Crie Firestore Database                                 ║
-   ║  4. Cole as credenciais abaixo                              ║
-   ╚══════════════════════════════════════════════════════════════╝ */
-const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:000000000000"
-};
+/* ╔════════════════════════════════════════════════════════════════════╗
+   ║  SUPABASE CONFIG — SUBSTITUIR COM SEUS DADOS                     ║
+   ║                                                                    ║
+   ║  1. Crie projeto em https://supabase.com                          ║
+   ║  2. Ative Authentication > Email/Password                         ║
+   ║  3. No SQL Editor, rode a query abaixo para criar a tabela:       ║
+   ║                                                                    ║
+   ║  CREATE TABLE clients (                                            ║
+   ║    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,                  ║
+   ║    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,       ║
+   ║    name TEXT NOT NULL,                                             ║
+   ║    data JSONB DEFAULT '[]'::JSONB,                                 ║
+   ║    created_at TIMESTAMPTZ DEFAULT now()                            ║
+   ║  );                                                                ║
+   ║                                                                    ║
+   ║  ALTER TABLE clients ENABLE ROW LEVEL SECURITY;                    ║
+   ║                                                                    ║
+   ║  CREATE POLICY "user_crud" ON clients                              ║
+   ║    FOR ALL USING (auth.uid() = user_id)                            ║
+   ║    WITH CHECK (auth.uid() = user_id);                              ║
+   ║                                                                    ║
+   ║  4. Copie a URL e anon key de Settings > API                      ║
+   ╚════════════════════════════════════════════════════════════════════╝ */
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+const SUPABASE_URL = 'https://czyzhwcrhiahfqrfykbz.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6eXpod2NyaGlhaGZxcmZ5a2J6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDU0NDgsImV4cCI6MjA4OTMyMTQ0OH0.wBhkxtjd2hsk75r4phjR3_NjVn3Zij-nrznI6zYClgA';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ── STATE ── */
 let currentUser = null;
-let clients = {};
-let activeClientId = null;
-let currentView = 'semanal';
-let selectedAd = 'todos';
-let chartInstances = {};
+let clients = {};          // { id: { name, data:[] } }
+let activeId = null;
+let curView = 'semanal';
+let selAd = 'todos';
+let charts = {};
 
-/* ── AUTH ── */
+const $ = id => document.getElementById(id);
+
+/* ══════════ AUTH ══════════ */
 let isSignUp = false;
-const $loginScreen = document.getElementById('login-screen');
-const $dashboard = document.getElementById('dashboard');
-const $authError = document.getElementById('auth-error');
 
-document.getElementById('btn-toggle-auth').addEventListener('click', () => {
+$('btn-toggle-auth').onclick = () => {
   isSignUp = !isSignUp;
-  document.getElementById('btn-toggle-auth').textContent = isSignUp ? 'Já tenho conta' : 'Criar conta';
-  document.querySelector('.btn-login').textContent = isSignUp ? 'Cadastrar' : 'Entrar';
-});
+  $('btn-toggle-auth').textContent = isSignUp ? 'Ja tenho conta' : 'Criar conta';
+  $('btn-login').textContent = isSignUp ? 'Cadastrar' : 'Entrar';
+};
 
-document.getElementById('btn-login').addEventListener('click', async () => {
-  const email = document.getElementById('login-email').value.trim();
-  const pass = document.getElementById('login-pass').value;
-  $authError.textContent = '';
-  try {
-    if (isSignUp) await auth.createUserWithEmailAndPassword(email, pass);
-    else await auth.signInWithEmailAndPassword(email, pass);
-  } catch(e) {
-    const msgs = {
-      'auth/user-not-found': 'Usuário não encontrado',
-      'auth/wrong-password': 'Senha incorreta',
-      'auth/email-already-in-use': 'E-mail já cadastrado',
-      'auth/weak-password': 'Senha muito fraca (mín. 6 caracteres)',
-      'auth/invalid-email': 'E-mail inválido',
-      'auth/invalid-credential': 'Credenciais inválidas',
+$('btn-login').onclick = async () => {
+  const email = $('l-email').value.trim();
+  const pass = $('l-pass').value;
+  $('auth-err').textContent = '';
+  const fn = isSignUp ? 'signUp' : 'signInWithPassword';
+  const { error } = await supabase.auth[fn]({ email, password: pass });
+  if (error) {
+    const m = {
+      'Invalid login credentials': 'Credenciais invalidas',
+      'User already registered': 'E-mail ja cadastrado',
+      'Password should be at least 6 characters': 'Senha minima 6 caracteres',
+      'Unable to validate email address: invalid format': 'E-mail invalido',
     };
-    $authError.textContent = msgs[e.code] || e.message;
+    $('auth-err').textContent = m[error.message] || error.message;
   }
-});
+};
 
-document.getElementById('btn-logout').addEventListener('click', () => auth.signOut());
+$('btn-logout').onclick = async () => { await supabase.auth.signOut(); };
 
-auth.onAuthStateChanged(user => {
-  currentUser = user;
-  if (user) {
-    $loginScreen.style.display = 'none';
-    $dashboard.classList.add('active');
+supabase.auth.onAuthStateChange((ev, session) => {
+  currentUser = session?.user || null;
+  if (currentUser) {
+    $('login-screen').style.display = 'none';
+    $('dashboard').classList.add('active');
     loadClients();
   } else {
-    $loginScreen.style.display = 'flex';
-    $dashboard.classList.remove('active');
-    clients = {};
-    activeClientId = null;
+    $('login-screen').style.display = 'flex';
+    $('dashboard').classList.remove('active');
+    clients = {}; activeId = null;
   }
 });
 
-/* ── FIRESTORE ── */
+/* ══════════ SUPABASE DB ══════════ */
 async function loadClients() {
   try {
-    const snap = await db.collection('users').doc(currentUser.uid).collection('clients').get();
+    const { data, error } = await supabase
+      .from('clients')
+      .select('id, name, data')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
     clients = {};
-    snap.forEach(doc => { clients[doc.id] = { name: doc.data().name, data: doc.data().data || [] }; });
+    (data || []).forEach(r => { clients[r.id] = { name: r.name, data: r.data || [] }; });
+
     if (Object.keys(clients).length === 0) {
-      await seedDemoData();
+      await seedDemo();
       return loadClients();
     }
-    if (!activeClientId || !clients[activeClientId]) activeClientId = Object.keys(clients)[0];
-    renderSidebar();
-    renderDashboard();
+    if (!activeId || !clients[activeId]) activeId = Object.keys(clients)[0];
   } catch(e) {
-    console.warn('Firestore não conectado, usando dados demo:', e.message);
-    if (Object.keys(clients).length === 0) loadDemoLocally();
-    renderSidebar();
-    renderDashboard();
+    console.warn('Supabase nao conectado, usando dados locais:', e.message);
+    if (Object.keys(clients).length === 0) loadLocal();
+  }
+  renderSidebar();
+  renderAll();
+}
+
+async function saveClient(name, data, id) {
+  if (id && clients[id]) {
+    // update existing
+    const { error } = await supabase.from('clients').update({ name, data }).eq('id', id);
+    if (!error) clients[id] = { name, data };
+    return id;
+  } else {
+    const { data: row, error } = await supabase.from('clients').insert({ user_id: currentUser.id, name, data }).select().single();
+    if (!error && row) { clients[row.id] = { name, data: row.data }; return row.id; }
+    // fallback local
+    const lid = 'local-' + Date.now();
+    clients[lid] = { name, data };
+    return lid;
   }
 }
 
-async function saveClient(id, name, data) {
-  clients[id] = { name, data };
-  try {
-    await db.collection('users').doc(currentUser.uid).collection('clients').doc(id).set({ name, data });
-  } catch(e) { console.warn('Erro ao salvar:', e.message); }
+async function seedDemo() {
+  const demos = [
+    { name:'E-commerce Moda', ads:['Carrossel Verao','Video UGC Tenis','Stories Promo 30%','Reels Lookbook','Catalogo Dinamico'] },
+    { name:'Clinica Estetica', ads:['Antes Depois Botox','Depoimento Paciente','Promo Harmonizacao','Stories Resultado','Reels Procedimento'] },
+    { name:'Restaurante Delivery', ads:['Promo Almoco','Video Chef','Stories Combo','Reels Receita','Carrossel Menu'] },
+  ];
+  for (const d of demos) await saveClient(d.name, genData(d.ads));
 }
 
-async function seedDemoData() {
-  const demos = {
-    'demo-moda': { name:'E-commerce Moda', ads:['Carrossel Verao','Video UGC Tenis','Stories Promo 30%','Reels Lookbook','Catalogo Dinamico'] },
-    'demo-clinica': { name:'Clinica Estetica', ads:['Antes Depois Botox','Depoimento Paciente','Promo Harmonizacao','Stories Resultado','Reels Procedimento'] },
-    'demo-delivery': { name:'Restaurante Delivery', ads:['Promo Almoco','Video Chef','Stories Combo','Reels Receita','Carrossel Menu'] },
-  };
-  for (const [id, d] of Object.entries(demos)) {
-    await saveClient(id, d.name, generateData(d.ads));
-  }
+function loadLocal() {
+  const demos = [
+    { name:'E-commerce Moda', ads:['Carrossel Verao','Video UGC Tenis','Stories Promo 30%','Reels Lookbook','Catalogo Dinamico'] },
+    { name:'Clinica Estetica', ads:['Antes Depois Botox','Depoimento Paciente','Promo Harmonizacao','Stories Resultado','Reels Procedimento'] },
+    { name:'Restaurante Delivery', ads:['Promo Almoco','Video Chef','Stories Combo','Reels Receita','Carrossel Menu'] },
+  ];
+  demos.forEach((d,i) => { clients['local-'+i] = { name:d.name, data:genData(d.ads) }; });
+  activeId = Object.keys(clients)[0];
 }
 
-function loadDemoLocally() {
-  const demos = {
-    'demo-moda': { name:'E-commerce Moda', ads:['Carrossel Verao','Video UGC Tenis','Stories Promo 30%','Reels Lookbook','Catalogo Dinamico'] },
-    'demo-clinica': { name:'Clinica Estetica', ads:['Antes Depois Botox','Depoimento Paciente','Promo Harmonizacao','Stories Resultado','Reels Procedimento'] },
-    'demo-delivery': { name:'Restaurante Delivery', ads:['Promo Almoco','Video Chef','Stories Combo','Reels Receita','Carrossel Menu'] },
-  };
-  for (const [id, d] of Object.entries(demos)) {
-    clients[id] = { name: d.name, data: generateData(d.ads) };
-  }
-  activeClientId = Object.keys(clients)[0];
-}
-
-function generateData(adNames) {
-  const rows = []; const base = new Date(2025,0,6);
-  for (let w=0; w<12; w++) {
-    const d = new Date(base); d.setDate(d.getDate()+w*7);
-    const wk = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
-    const mStr = d.toLocaleString('pt-BR',{month:'long'});
-    const mes = mStr.charAt(0).toUpperCase()+mStr.slice(1);
-    adNames.forEach(ad => {
-      const spend=100+Math.random()*350, cpc=.6+Math.random()*2.8;
-      const clicks=Math.floor(spend/cpc), impr=clicks*(9+Math.floor(Math.random()*18));
-      const ctr=(clicks/impr)*100, cr=.015+Math.random()*.09;
-      const conv=Math.max(1,Math.floor(clicks*cr)), cpa=spend/conv;
-      const rev=conv*(40+Math.random()*350), roas=rev/spend;
-      rows.push({ semana:wk, semana_num:w+1, mes, mes_num:d.getMonth()+1,
-        anuncio:ad, investimento:+spend.toFixed(2), impressoes:impr,
-        cliques:clicks, ctr:+ctr.toFixed(2), cpc:+cpc.toFixed(2),
-        conversoes:conv, cpa:+cpa.toFixed(2), receita:+rev.toFixed(2), roas:+roas.toFixed(2) });
+function genData(ads) {
+  const rows = [], base = new Date(2025,0,6);
+  for (let w=0;w<12;w++) {
+    const d=new Date(base); d.setDate(d.getDate()+w*7);
+    const wk=`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+    const mS=d.toLocaleString('pt-BR',{month:'long'});
+    const mes=mS.charAt(0).toUpperCase()+mS.slice(1);
+    ads.forEach(ad=>{
+      const sp=100+Math.random()*350,cp=.6+Math.random()*2.8;
+      const cl=Math.floor(sp/cp),im=cl*(9+Math.floor(Math.random()*18));
+      const ct=(cl/im)*100,cr=.015+Math.random()*.09;
+      const cv=Math.max(1,Math.floor(cl*cr)),ca=sp/cv;
+      const rv=cv*(40+Math.random()*350),ro=rv/sp;
+      rows.push({semana:wk,semana_num:w+1,mes,mes_num:d.getMonth()+1,anuncio:ad,
+        investimento:+sp.toFixed(2),impressoes:im,cliques:cl,ctr:+ct.toFixed(2),
+        cpc:+cp.toFixed(2),conversoes:cv,cpa:+ca.toFixed(2),receita:+rv.toFixed(2),roas:+ro.toFixed(2)});
     });
   }
   return rows;
 }
 
-/* ── SIDEBAR ── */
+/* ══════════ UI HELPERS ══════════ */
+function fmt(n,t='n'){if(n==null||isNaN(n))return'—';if(t==='$')return`R$ ${n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`;if(t==='%')return`${n.toFixed(2)}%`;if(t==='x')return`${n.toFixed(2)}x`;return n.toLocaleString('pt-BR',{maximumFractionDigits:2});}
+function pct(c,p){return p?((c-p)/p)*100:null;}
+
+/* ══════════ SIDEBAR ══════════ */
 function renderSidebar() {
-  const $list = document.getElementById('client-list');
-  $list.innerHTML = '';
-  Object.entries(clients).forEach(([id, c]) => {
-    const btn = document.createElement('button');
-    btn.className = 'client-btn' + (id === activeClientId ? ' active' : '');
-    btn.innerHTML = `<span class="dot"></span>${c.name}`;
-    btn.onclick = () => { activeClientId = id; selectedAd = 'todos'; renderSidebar(); renderDashboard(); };
-    $list.appendChild(btn);
+  const el = $('client-list'); el.innerHTML = '';
+  Object.entries(clients).forEach(([id,c]) => {
+    const b = document.createElement('button');
+    b.className = 'c-btn'+(id===activeId?' active':'');
+    b.innerHTML = `<span class="c-dot"></span>${c.name}`;
+    b.onclick = () => { activeId=id; selAd='todos'; renderSidebar(); renderAll(); };
+    el.appendChild(b);
   });
-  // update import modal select
-  const sel = document.getElementById('import-client-select');
+  const sel = $('imp-sel');
   sel.innerHTML = '<option value="__new">+ Novo cliente</option>';
-  Object.entries(clients).forEach(([id, c]) => {
-    sel.innerHTML += `<option value="${id}">${c.name}</option>`;
-  });
+  Object.entries(clients).forEach(([id,c]) => { sel.innerHTML += `<option value="${id}">${c.name}</option>`; });
 }
 
-/* ── TOGGLE SIDEBAR ── */
-document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('closed');
-});
+$('btn-sidebar').onclick = () => $('sidebar').classList.toggle('closed');
 
-/* ── VIEW BUTTONS ── */
-function renderViewBtns() {
-  const $v = document.getElementById('view-btns');
-  $v.innerHTML = '';
-  ['semanal','mensal','anuncio'].forEach(v => {
-    const btn = document.createElement('button');
-    btn.className = 'btn-outline' + (currentView === v ? ' active' : '');
-    btn.textContent = v === 'anuncio' ? 'Por Anuncio' : v.charAt(0).toUpperCase() + v.slice(1);
-    btn.onclick = () => { currentView = v; renderDashboard(); };
-    $v.appendChild(btn);
-  });
-}
-
-/* ── HELPERS ── */
-function fmt(n, t='num') {
-  if (n==null||isNaN(n)) return '—';
-  if (t==='$') return `R$ ${n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
-  if (t==='%') return `${n.toFixed(2)}%`;
-  if (t==='x') return `${n.toFixed(2)}x`;
-  return n.toLocaleString('pt-BR',{maximumFractionDigits:2});
-}
-function pct(cur,prev) { return prev ? ((cur-prev)/prev)*100 : null; }
-
-/* ── RENDER DASHBOARD ── */
-function renderDashboard() {
-  const client = clients[activeClientId];
-  if (!client) return;
-  document.getElementById('client-title').textContent = client.name;
-  renderViewBtns();
-  const raw = client.data;
-  const filtered = selectedAd === 'todos' ? raw : raw.filter(r => r.anuncio === selectedAd);
-  const ads = [...new Set(raw.map(r => r.anuncio))];
+/* ══════════ RENDER ══════════ */
+function renderAll() {
+  const cl = clients[activeId]; if (!cl) return;
+  $('c-title').innerHTML = cl.name;
+  renderViews();
+  const raw = cl.data;
+  const filt = selAd==='todos' ? raw : raw.filter(r=>r.anuncio===selAd);
+  const ads = [...new Set(raw.map(r=>r.anuncio))];
 
   // Filter bar
-  const $fb = document.getElementById('filter-bar');
-  $fb.innerHTML = '';
-  if (currentView !== 'anuncio') {
-    const mkBtn = (label, val) => {
-      const b = document.createElement('button');
-      b.className = 'btn-outline' + (selectedAd === val ? ' active' : '');
-      b.textContent = label;
-      b.onclick = () => { selectedAd = val; renderDashboard(); };
-      return b;
-    };
-    $fb.appendChild(mkBtn('Todos', 'todos'));
-    ads.forEach(a => $fb.appendChild(mkBtn(a.length > 20 ? a.slice(0,18)+'...' : a, a)));
+  const fb = $('fbar'); fb.innerHTML = '';
+  if (curView!=='anuncio') {
+    const mk = (l,v) => { const b=document.createElement('button'); b.className='btn-o'+(selAd===v?' on':'');
+      b.textContent=l; b.onclick=()=>{selAd=v;renderAll();}; return b; };
+    fb.appendChild(mk('Todos','todos'));
+    ads.forEach(a=>fb.appendChild(mk(a.length>20?a.slice(0,18)+'...':a,a)));
   }
 
   // Aggregate
-  const k = currentView==='semanal'?'semana':currentView==='mensal'?'mes':'anuncio';
-  const nk = currentView==='semanal'?'semana_num':currentView==='mensal'?'mes_num':null;
-  const g = {};
-  filtered.forEach(r => {
-    const key = r[k];
-    if (!g[key]) g[key] = {label:key, n:nk?r[nk]:0, inv:0, imp:0, cli:0, conv:0, rec:0};
-    g[key].inv+=r.investimento; g[key].imp+=r.impressoes; g[key].cli+=r.cliques;
-    g[key].conv+=r.conversoes; g[key].rec+=r.receita;
-  });
-  const agg = Object.values(g).map(v => ({
-    ...v, ctr:v.imp?(v.cli/v.imp)*100:0, cpc:v.cli?v.inv/v.cli:0,
-    cpa:v.conv?v.inv/v.conv:0, roas:v.inv?v.rec/v.inv:0,
-  })).sort((a,b)=>(a.n||0)-(b.n||0)||a.label.localeCompare(b.label));
+  const k=curView==='semanal'?'semana':curView==='mensal'?'mes':'anuncio';
+  const nk=curView==='semanal'?'semana_num':curView==='mensal'?'mes_num':null;
+  const g={};
+  filt.forEach(r=>{const key=r[k];if(!g[key])g[key]={label:key,n:nk?r[nk]:0,inv:0,imp:0,cli:0,conv:0,rec:0};
+    g[key].inv+=r.investimento;g[key].imp+=r.impressoes;g[key].cli+=r.cliques;g[key].conv+=r.conversoes;g[key].rec+=r.receita;});
+  const agg=Object.values(g).map(v=>({...v,ctr:v.imp?(v.cli/v.imp)*100:0,cpc:v.cli?v.inv/v.cli:0,
+    cpa:v.conv?v.inv/v.conv:0,roas:v.inv?v.rec/v.inv:0})).sort((a,b)=>(a.n||0)-(b.n||0)||a.label.localeCompare(b.label));
 
   // Totals
-  const t = {inv:0,imp:0,cli:0,conv:0,rec:0};
-  filtered.forEach(r=>{t.inv+=r.investimento;t.imp+=r.impressoes;t.cli+=r.cliques;t.conv+=r.conversoes;t.rec+=r.receita;});
-  t.ctr=t.imp?(t.cli/t.imp)*100:0; t.cpc=t.cli?t.inv/t.cli:0;
-  t.cpa=t.conv?t.inv/t.conv:0; t.roas=t.inv?t.rec/t.inv:0;
+  const t={inv:0,imp:0,cli:0,conv:0,rec:0};
+  filt.forEach(r=>{t.inv+=r.investimento;t.imp+=r.impressoes;t.cli+=r.cliques;t.conv+=r.conversoes;t.rec+=r.receita;});
+  t.ctr=t.imp?(t.cli/t.imp)*100:0;t.cpc=t.cli?t.inv/t.cli:0;t.cpa=t.conv?t.inv/t.conv:0;t.roas=t.inv?t.rec/t.inv:0;
 
-  // Prev half for comparison
-  let pt = null;
-  if (agg.length >= 2) {
-    const half = Math.floor(agg.length/2);
-    const prev = agg.slice(0,half);
-    pt = {inv:0,imp:0,cli:0,conv:0,rec:0};
-    prev.forEach(v=>{pt.inv+=v.inv;pt.imp+=v.imp;pt.cli+=v.cli;pt.conv+=v.conv;pt.rec+=v.rec;});
-    pt.ctr=pt.imp?(pt.cli/pt.imp)*100:0; pt.cpc=pt.cli?pt.inv/pt.cli:0;
-    pt.cpa=pt.conv?pt.inv/pt.conv:0; pt.roas=pt.inv?pt.rec/pt.inv:0;
-  }
+  let pt=null;
+  if(agg.length>=2){const h=Math.floor(agg.length/2);const p=agg.slice(0,h);
+    pt={inv:0,imp:0,cli:0,conv:0,rec:0};p.forEach(v=>{pt.inv+=v.inv;pt.imp+=v.imp;pt.cli+=v.cli;pt.conv+=v.conv;pt.rec+=v.rec;});
+    pt.ctr=pt.imp?(pt.cli/pt.imp)*100:0;pt.cpc=pt.cli?pt.inv/pt.cli:0;pt.cpa=pt.conv?pt.inv/pt.conv:0;pt.roas=pt.inv?pt.rec/pt.inv:0;}
 
   // Metrics
-  const metrics = [
-    {l:'Investimento',v:t.inv,f:'$',c:pt?pct(t.inv,pt.inv):null,i:'bx-dollar-circle',inv:false},
-    {l:'Impressoes',v:t.imp,f:'num',c:pt?pct(t.imp,pt.imp):null,i:'bx-show',inv:false},
-    {l:'Cliques',v:t.cli,f:'num',c:pt?pct(t.cli,pt.cli):null,i:'bx-pointer',inv:false},
-    {l:'CTR',v:t.ctr,f:'%',c:pt?pct(t.ctr,pt.ctr):null,i:'bx-bar-chart-alt-2',inv:false},
-    {l:'Conversoes',v:t.conv,f:'num',c:pt?pct(t.conv,pt.conv):null,i:'bx-target-lock',inv:false},
-    {l:'CPA',v:t.cpa,f:'$',c:pt?pct(t.cpa,pt.cpa):null,i:'bx-purchase-tag',inv:true},
-    {l:'Receita',v:t.rec,f:'$',c:pt?pct(t.rec,pt.rec):null,i:'bx-wallet',inv:false},
-    {l:'ROAS',v:t.roas,f:'x',c:pt?pct(t.roas,pt.roas):null,i:'bx-line-chart',inv:false},
+  const ms=[
+    {l:'Investimento',v:t.inv,f:'$',c:pt?pct(t.inv,pt.inv):null,i:'bx-dollar-circle',iv:0},
+    {l:'Impressoes',v:t.imp,f:'n',c:pt?pct(t.imp,pt.imp):null,i:'bx-show',iv:0},
+    {l:'Cliques',v:t.cli,f:'n',c:pt?pct(t.cli,pt.cli):null,i:'bx-pointer',iv:0},
+    {l:'CTR',v:t.ctr,f:'%',c:pt?pct(t.ctr,pt.ctr):null,i:'bx-bar-chart-alt-2',iv:0},
+    {l:'Conversoes',v:t.conv,f:'n',c:pt?pct(t.conv,pt.conv):null,i:'bx-target-lock',iv:0},
+    {l:'CPA',v:t.cpa,f:'$',c:pt?pct(t.cpa,pt.cpa):null,i:'bx-purchase-tag',iv:1},
+    {l:'Receita',v:t.rec,f:'$',c:pt?pct(t.rec,pt.rec):null,i:'bx-wallet',iv:0},
+    {l:'ROAS',v:t.roas,f:'x',c:pt?pct(t.roas,pt.roas):null,i:'bx-line-chart',iv:0},
   ];
-  const $mg = document.getElementById('metrics-grid');
-  $mg.innerHTML = '';
-  metrics.forEach(m => {
-    const isGood = m.c!=null ? (m.inv ? m.c<0 : m.c>0) : null;
-    const changeHTML = m.c!=null ? `<div class="mc-change ${isGood?'up':'down'}">${m.c>0?'&#9650;':'&#9660;'} ${Math.abs(m.c).toFixed(1)}%</div>` : '';
-    $mg.innerHTML += `<div class="metric-card">
-      <div class="mc-top"><span class="mc-label">${m.l}</span><i class='bx ${m.i} mc-icon'></i></div>
-      <div class="mc-value">${fmt(m.v,m.f)}</div>${changeHTML}</div>`;
+  const mel=$('metrics');mel.innerHTML='';
+  ms.forEach(m=>{
+    const ok=m.c!=null?(m.iv?m.c<0:m.c>0):null;
+    const ch=m.c!=null?`<div class="mc-chg ${ok?'up':'dn'}">${m.c>0?'&#9650;':'&#9660;'} ${Math.abs(m.c).toFixed(1)}%</div>`:'';
+    mel.innerHTML+=`<div class="mc"><div class="mc-top"><span class="mc-label">${m.l}</span><i class='bx ${m.i} mc-icon'></i></div><div class="mc-val">${fmt(m.v,m.f)}</div>${ch}</div>`;
   });
 
   // Charts
-  const labels = agg.map(r=>r.label);
-  const purple = '#8B5CF6', gold = '#D4A843', green = '#22C97A', orange = '#FF7A45', cyan = '#00D4E6';
-  const gridColor = '#1C2742';
+  const lbs=agg.map(r=>r.label);
+  const P='#7C3AED',G='#D4AF37',GR='#22C97A',O='#F97316',C='#22D3EE',R='#EF4444';
+  const gc='#262044';
+  const tOpts={backgroundColor:'#0F0D1A',titleColor:'#C4B5E2',bodyColor:'#FFF',borderColor:'#362E5C',borderWidth:1};
+  function mk(id,type,ds,extra={}){if(charts[id])charts[id].destroy();charts[id]=new Chart($(id),{type,data:{labels:lbs,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:tOpts},
+    scales:type==='doughnut'?{}:{x:{grid:{color:gc},ticks:{color:'#6E5D94',font:{size:10}}},y:{grid:{color:gc},ticks:{color:'#6E5D94',font:{size:10}}}}, ...extra}});}
 
-  function makeChart(id, type, datasets, opts={}) {
-    if (chartInstances[id]) chartInstances[id].destroy();
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    chartInstances[id] = new Chart(ctx, {
-      type,
-      data: { labels, datasets },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#110F1D', titleColor: '#C0B6DA', bodyColor: '#FFF', borderColor: '#3B3260', borderWidth: 1 } },
-        scales: type==='pie'||type==='doughnut' ? {} : {
-          x: { grid: { color: gridColor }, ticks: { color: '#6B5F8A', font: { size: 10 } } },
-          y: { grid: { color: gridColor }, ticks: { color: '#6B5F8A', font: { size: 10 } } },
-        },
-        ...opts,
-      },
-    });
-  }
+  const vl=curView==='semanal'?'Semanal':curView==='mensal'?'Mensal':'por Anuncio';
+  $('t-inv').textContent='Investimento '+vl;
+  $('t-roas').textContent='ROAS '+vl;
 
-  document.getElementById('ch1-title').textContent = `Investimento ${currentView==='semanal'?'Semanal':currentView==='mensal'?'Mensal':'por Anuncio'}`;
-  document.getElementById('ch2-title').textContent = `ROAS ${currentView==='semanal'?'Semanal':currentView==='mensal'?'Mensal':'por Anuncio'}`;
+  mk('ch-inv','bar',[{label:'Investimento',data:agg.map(r=>+r.inv.toFixed(2)),backgroundColor:P+'CC',borderColor:P,borderWidth:1,borderRadius:4}]);
+  mk('ch-roas','line',[{label:'ROAS',data:agg.map(r=>+r.roas.toFixed(2)),borderColor:G,backgroundColor:G+'22',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:G}]);
+  mk('ch-cpa','line',[{label:'CPA',data:agg.map(r=>+r.cpa.toFixed(2)),borderColor:O,backgroundColor:O+'18',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:O}]);
+  mk('ch-conv','bar',[{label:'Conversoes',data:agg.map(r=>r.conv),backgroundColor:GR+'BB',borderColor:GR,borderWidth:1,borderRadius:4}]);
+  mk('ch-ctr','line',[{label:'CTR %',data:agg.map(r=>+r.ctr.toFixed(2)),borderColor:C,backgroundColor:C+'18',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:C}]);
 
-  makeChart('chart-invest','bar',[{label:'Investimento',data:agg.map(r=>+r.inv.toFixed(2)),backgroundColor:purple+'CC',borderColor:purple,borderWidth:1,borderRadius:4}]);
-  makeChart('chart-roas','line',[{label:'ROAS',data:agg.map(r=>+r.roas.toFixed(2)),borderColor:gold,backgroundColor:gold+'22',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:gold}]);
-  makeChart('chart-cpa','line',[{label:'CPA',data:agg.map(r=>+r.cpa.toFixed(2)),borderColor:orange,backgroundColor:orange+'18',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:orange}]);
-  makeChart('chart-conv','bar',[{label:'Conversoes',data:agg.map(r=>r.conv),backgroundColor:green+'BB',borderColor:green,borderWidth:1,borderRadius:4}]);
-  makeChart('chart-ctr','line',[{label:'CTR %',data:agg.map(r=>+r.ctr.toFixed(2)),borderColor:cyan,backgroundColor:cyan+'18',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:cyan}]);
-
-  // Pie chart
-  const adG = {};
-  raw.forEach(r => { adG[r.anuncio] = (adG[r.anuncio]||0) + r.investimento; });
-  const pieLabels = Object.keys(adG);
-  const pieData = Object.values(adG).map(v=>+v.toFixed(2));
-  const pieColors = [purple, gold, green, orange, cyan, '#F04858', '#9B6DFF'];
-  if (chartInstances['chart-pie']) chartInstances['chart-pie'].destroy();
-  chartInstances['chart-pie'] = new Chart(document.getElementById('chart-pie'), {
-    type: 'doughnut',
-    data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: pieColors.slice(0,pieLabels.length), borderWidth: 0 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'right', labels: { color: '#C0B6DA', font: { size: 10 }, padding: 8, usePointStyle: true, pointStyleWidth: 8 } },
-        tooltip: { backgroundColor: '#110F1D', titleColor: '#C0B6DA', bodyColor: '#FFF', borderColor: '#3B3260', borderWidth: 1 } },
-      cutout: '55%',
-    },
-  });
+  // Pie
+  const ag={};raw.forEach(r=>{ag[r.anuncio]=(ag[r.anuncio]||0)+r.investimento;});
+  const pl=Object.keys(ag),pd=Object.values(ag).map(v=>+v.toFixed(2));
+  const pc=[P,G,GR,O,C,R,'#A78BFA'];
+  if(charts['ch-pie'])charts['ch-pie'].destroy();
+  charts['ch-pie']=new Chart($('ch-pie'),{type:'doughnut',data:{labels:pl,datasets:[{data:pd,backgroundColor:pc.slice(0,pl.length),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'right',labels:{color:'#C4B5E2',font:{size:10},padding:8,usePointStyle:true,pointStyleWidth:8}},tooltip:tOpts}}});
 
   // Table
-  const viewLabel = currentView==='anuncio'?'Anuncio':currentView==='semanal'?'Semana':'Mes';
-  document.getElementById('table-title').textContent = `Dados Detalhados — ${viewLabel}`;
-  const thead = document.querySelector('#data-table thead');
-  const tbody = document.querySelector('#data-table tbody');
-  thead.innerHTML = `<tr>${[viewLabel,'Investimento','Impressoes','Cliques','CTR','CPC','Conversoes','CPA','Receita','ROAS'].map(h=>`<th>${h}</th>`).join('')}</tr>`;
-  tbody.innerHTML = '';
-  agg.forEach(r => {
-    const roasClass = r.roas>=2?'td-green':r.roas>=1?'td-gold':'color:var(--red)';
-    const cpaClass = r.cpa>(t.cpa*1.3)?'color:var(--red)':'td-gold';
-    tbody.innerHTML += `<tr>
-      <td class="td-label">${r.label}</td>
-      <td class="td-accent">${fmt(r.inv,'$')}</td>
-      <td>${fmt(r.imp)}</td>
-      <td>${fmt(r.cli)}</td>
-      <td class="td-cyan">${fmt(r.ctr,'%')}</td>
-      <td>${fmt(r.cpc,'$')}</td>
-      <td class="td-green">${fmt(r.conv)}</td>
-      <td style="${cpaClass.startsWith('color')?cpaClass:''}" class="${cpaClass.startsWith('td')?cpaClass:''}">${fmt(r.cpa,'$')}</td>
-      <td class="td-green">${fmt(r.rec,'$')}</td>
-      <td style="${roasClass.startsWith('color')?roasClass:''}" class="${roasClass.startsWith('td')?roasClass:''}" style="font-weight:700">${fmt(r.roas,'x')}</td>
-    </tr>`;
+  const tvl=curView==='anuncio'?'Anuncio':curView==='semanal'?'Semana':'Mes';
+  $('tb-title').textContent='Dados Detalhados — '+tvl;
+  const th=document.querySelector('#dtable thead'), tb=document.querySelector('#dtable tbody');
+  th.innerHTML=`<tr>${[tvl,'Investimento','Impressoes','Cliques','CTR','CPC','Conversoes','CPA','Receita','ROAS'].map(h=>`<th>${h}</th>`).join('')}</tr>`;
+  tb.innerHTML='';
+  agg.forEach(r=>{
+    const rc=r.roas>=2?'color:#22C97A;font-weight:700':r.roas>=1?'color:#D4AF37;font-weight:700':'color:#EF4444;font-weight:700';
+    const cc=r.cpa>(t.cpa*1.3)?'color:#EF4444':'color:#D4AF37';
+    tb.innerHTML+=`<tr>
+      <td style="color:#fff;font-weight:600;font-family:var(--font)">${r.label}</td>
+      <td style="color:#A78BFA">${fmt(r.inv,'$')}</td><td>${fmt(r.imp)}</td><td>${fmt(r.cli)}</td>
+      <td style="color:#22D3EE">${fmt(r.ctr,'%')}</td><td>${fmt(r.cpc,'$')}</td>
+      <td style="color:#22C97A;font-weight:700">${fmt(r.conv)}</td>
+      <td style="${cc}">${fmt(r.cpa,'$')}</td>
+      <td style="color:#22C97A">${fmt(r.rec,'$')}</td>
+      <td style="${rc}">${fmt(r.roas,'x')}</td></tr>`;
   });
 }
 
-/* ── IMPORT CSV ── */
-document.getElementById('btn-open-import').addEventListener('click', () => {
-  document.getElementById('import-modal').classList.add('show');
-  document.getElementById('import-new-name').value = '';
-  const sel = document.getElementById('import-client-select');
-  sel.value = '__new';
-  toggleNewNameField();
-});
-document.getElementById('btn-cancel-import').addEventListener('click', () => {
-  document.getElementById('import-modal').classList.remove('show');
-});
-document.getElementById('import-modal').addEventListener('click', e => {
-  if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
-});
-
-document.getElementById('import-client-select').addEventListener('change', toggleNewNameField);
-function toggleNewNameField() {
-  const sel = document.getElementById('import-client-select').value;
-  document.getElementById('import-new-name').style.display = sel === '__new' ? 'block' : 'none';
+function renderViews() {
+  const el=$('view-btns');el.innerHTML='';
+  ['semanal','mensal','anuncio'].forEach(v=>{
+    const b=document.createElement('button');b.className='btn-o'+(curView===v?' on':'');
+    b.textContent=v==='anuncio'?'Por Anuncio':v.charAt(0).toUpperCase()+v.slice(1);
+    b.onclick=()=>{curView=v;renderAll();};el.appendChild(b);
+  });
 }
 
-document.getElementById('btn-select-file').addEventListener('click', () => {
-  document.getElementById('import-file').click();
-});
+/* ══════════ IMPORT ══════════ */
+$('btn-import').onclick=()=>{$('import-modal').classList.add('show');$('imp-name').value='';$('imp-sel').value='__new';togName();};
+$('btn-cancel-imp').onclick=()=>{$('import-modal').classList.remove('show');};
+$('import-modal').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('show');};
+$('imp-sel').onchange=togName;
+function togName(){$('imp-name').style.display=$('imp-sel').value==='__new'?'block':'none';}
 
-document.getElementById('import-file').addEventListener('change', async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  const sel = document.getElementById('import-client-select').value;
-  let targetId, targetName;
-  if (sel === '__new') {
-    targetName = document.getElementById('import-new-name').value.trim();
-    if (!targetName) { alert('Digite o nome do cliente.'); return; }
-    targetId = 'c' + Date.now();
-  } else {
-    targetId = sel;
-    targetName = clients[sel].name;
-  }
+$('btn-file').onclick=()=>$('imp-file').click();
 
-  Papa.parse(file, {
-    header: true,
-    skipEmptyLines: true,
-    dynamicTyping: true,
-    complete: async (results) => {
-      const data = results.data.filter(r => Object.values(r).some(v => v != null && v !== ''));
-      if (data.length === 0) { alert('Arquivo vazio ou formato invalido.'); return; }
-      // normalize headers
-      const normalized = data.map(r => {
-        const o = {};
-        Object.entries(r).forEach(([k,v]) => { o[k.toLowerCase().trim()] = v; });
-        return o;
-      });
-      if (sel === '__new') {
-        await saveClient(targetId, targetName, normalized);
-      } else {
-        const existing = clients[targetId].data || [];
-        await saveClient(targetId, targetName, [...existing, ...normalized]);
-      }
-      activeClientId = targetId;
-      selectedAd = 'todos';
-      document.getElementById('import-modal').classList.remove('show');
-      document.getElementById('import-file').value = '';
-      renderSidebar();
-      renderDashboard();
-    },
-    error: () => alert('Erro ao ler o arquivo CSV.'),
-  });
-});
+$('imp-file').onchange=async e=>{
+  const file=e.target.files?.[0]; if(!file)return;
+  const sv=$('imp-sel').value;
+  let tid,tname;
+  if(sv==='__new'){tname=$('imp-name').value.trim();if(!tname){alert('Digite o nome do cliente.');return;}tid=null;}
+  else{tid=sv;tname=clients[sv].name;}
 
-/* ── PDF REPORT ── */
-document.getElementById('btn-pdf').addEventListener('click', () => {
-  const client = clients[activeClientId];
-  if (!client) return;
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const raw = client.data;
-  const w = doc.internal.pageSize.getWidth();
+  Papa.parse(file,{header:true,skipEmptyLines:true,dynamicTyping:true,complete:async res=>{
+    const d=res.data.filter(r=>Object.values(r).some(v=>v!=null&&v!==''));
+    if(!d.length){alert('Arquivo vazio ou formato invalido.');return;}
+    const norm=d.map(r=>{const o={};Object.entries(r).forEach(([k,v])=>{o[k.toLowerCase().trim()]=v;});return o;});
 
-  // Header
-  doc.setFillColor(17,15,29);
-  doc.rect(0,0,w,40,'F');
-  doc.setFillColor(139,92,246);
-  doc.rect(0,38,w,2,'F');
+    if(tid && clients[tid]){
+      const merged=[...(clients[tid].data||[]),...norm];
+      await saveClient(tname,merged,tid);
+    } else {
+      tid=await saveClient(tname,norm);
+    }
+    activeId=tid;selAd='todos';
+    $('import-modal').classList.remove('show');
+    $('imp-file').value='';
+    renderSidebar();renderAll();
+  },error:()=>alert('Erro ao ler CSV.')});
+};
+
+/* ══════════ PDF REPORT ══════════ */
+$('btn-pdf').onclick=()=>{
+  const cl=clients[activeId];if(!cl)return;
+  const{jsPDF}=window.jspdf;const doc=new jsPDF();
+  const raw=cl.data,w=doc.internal.pageSize.getWidth();
+
+  // Header bar
+  doc.setFillColor(15,13,26); doc.rect(0,0,w,42,'F');
+  doc.setFillColor(124,58,237); doc.rect(0,40,w/2,2,'F');
+  doc.setFillColor(212,175,55); doc.rect(w/2,40,w/2,2,'F');
   doc.setTextColor(255,255,255);
-  doc.setFontSize(20);
-  doc.setFont('helvetica','bold');
-  doc.text('VIRTUS — Relatorio Meta Ads', 14, 18);
-  doc.setFontSize(11);
-  doc.setFont('helvetica','normal');
-  doc.text(`Cliente: ${client.name}`, 14, 28);
-  doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 14, 34);
+  doc.setFontSize(22); doc.setFont('helvetica','bold');
+  doc.text('ENGAJAMENTES', 14, 18);
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.setTextColor(196,181,226);
+  doc.text('Relatorio Meta Ads', 14, 26);
+  doc.text(`Cliente: ${cl.name}`, 14, 32);
+  doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 14, 38);
 
   // Totals
-  const t = {inv:0,imp:0,cli:0,conv:0,rec:0};
+  const t={inv:0,imp:0,cli:0,conv:0,rec:0};
   raw.forEach(r=>{t.inv+=r.investimento||0;t.imp+=r.impressoes||0;t.cli+=r.cliques||0;t.conv+=r.conversoes||0;t.rec+=r.receita||0;});
-  t.ctr=t.imp?(t.cli/t.imp)*100:0; t.cpc=t.cli?t.inv/t.cli:0;
-  t.cpa=t.conv?t.inv/t.conv:0; t.roas=t.inv?t.rec/t.inv:0;
+  t.ctr=t.imp?(t.cli/t.imp)*100:0;t.cpc=t.cli?t.inv/t.cli:0;t.cpa=t.conv?t.inv/t.conv:0;t.roas=t.inv?t.rec/t.inv:0;
 
-  doc.setTextColor(80,80,80);
-  doc.setFontSize(13);
-  doc.setFont('helvetica','bold');
-  doc.text('Resumo Geral', 14, 52);
-  doc.setFontSize(10);
-  doc.setFont('helvetica','normal');
-  const summaryData = [
-    ['Investimento Total', fmt(t.inv,'$')],
-    ['Impressoes', fmt(t.imp)],
-    ['Cliques', fmt(t.cli)],
-    ['CTR Medio', fmt(t.ctr,'%')],
-    ['CPC Medio', fmt(t.cpc,'$')],
-    ['Conversoes', fmt(t.conv)],
-    ['CPA Medio', fmt(t.cpa,'$')],
-    ['Receita Total', fmt(t.rec,'$')],
-    ['ROAS', fmt(t.roas,'x')],
-  ];
-  doc.autoTable({
-    startY: 56,
-    head: [['Metrica','Valor']],
-    body: summaryData,
-    theme: 'grid',
-    headStyles: { fillColor: [139,92,246], textColor: 255, fontStyle: 'bold' },
-    styles: { fontSize: 9 },
-    margin: { left: 14, right: 14 },
-  });
+  doc.autoTable({startY:48,head:[['Metrica','Valor']],body:[
+    ['Investimento Total',fmt(t.inv,'$')],['Impressoes',fmt(t.imp)],['Cliques',fmt(t.cli)],
+    ['CTR Medio',fmt(t.ctr,'%')],['CPC Medio',fmt(t.cpc,'$')],['Conversoes',fmt(t.conv)],
+    ['CPA Medio',fmt(t.cpa,'$')],['Receita Total',fmt(t.rec,'$')],['ROAS',fmt(t.roas,'x')]
+  ],theme:'grid',headStyles:{fillColor:[124,58,237],textColor:255,fontStyle:'bold'},styles:{fontSize:9},margin:{left:14,right:14}});
 
   // Ad breakdown
-  doc.setFontSize(13);
-  doc.setFont('helvetica','bold');
-  doc.text('Performance por Anuncio', 14, doc.lastAutoTable.finalY + 14);
-  const adG = {};
-  raw.forEach(r => {
-    const a = r.anuncio || 'N/A';
-    if (!adG[a]) adG[a] = {inv:0,cli:0,conv:0,rec:0,imp:0};
-    adG[a].inv+=r.investimento||0; adG[a].cli+=r.cliques||0;
-    adG[a].conv+=r.conversoes||0; adG[a].rec+=r.receita||0; adG[a].imp+=r.impressoes||0;
-  });
-  const adRows = Object.entries(adG).map(([a,v]) => [
-    a, fmt(v.inv,'$'), fmt(v.cli), fmt(v.conv),
-    fmt(v.conv?v.inv/v.conv:0,'$'), fmt(v.inv?v.rec/v.inv:0,'x'),
-    fmt(v.imp?(v.cli/v.imp)*100:0,'%'),
-  ]);
-  doc.autoTable({
-    startY: doc.lastAutoTable.finalY + 18,
-    head: [['Anuncio','Investimento','Cliques','Conversoes','CPA','ROAS','CTR']],
-    body: adRows,
-    theme: 'grid',
-    headStyles: { fillColor: [212,168,67], textColor: 0, fontStyle: 'bold' },
-    styles: { fontSize: 8, cellPadding: 3 },
-    columnStyles: { 0: { cellWidth: 42 } },
-    margin: { left: 14, right: 14 },
-  });
+  doc.setFontSize(13);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
+  doc.text('Performance por Anuncio',14,doc.lastAutoTable.finalY+14);
+  const ag={};raw.forEach(r=>{const a=r.anuncio||'N/A';if(!ag[a])ag[a]={inv:0,cli:0,conv:0,rec:0,imp:0};
+    ag[a].inv+=r.investimento||0;ag[a].cli+=r.cliques||0;ag[a].conv+=r.conversoes||0;ag[a].rec+=r.receita||0;ag[a].imp+=r.impressoes||0;});
+  const ar=Object.entries(ag).map(([a,v])=>[a,fmt(v.inv,'$'),fmt(v.cli),fmt(v.conv),fmt(v.conv?v.inv/v.conv:0,'$'),fmt(v.inv?v.rec/v.inv:0,'x'),fmt(v.imp?(v.cli/v.imp)*100:0,'%')]);
+  doc.autoTable({startY:doc.lastAutoTable.finalY+18,head:[['Anuncio','Investimento','Cliques','Conversoes','CPA','ROAS','CTR']],body:ar,theme:'grid',
+    headStyles:{fillColor:[212,175,55],textColor:[15,13,26],fontStyle:'bold'},styles:{fontSize:8,cellPadding:3},columnStyles:{0:{cellWidth:40}},margin:{left:14,right:14}});
 
   // Weekly
   doc.addPage();
-  doc.setFillColor(17,15,29);
-  doc.rect(0,0,w,20,'F');
-  doc.setFillColor(139,92,246);
-  doc.rect(0,18,w,2,'F');
-  doc.setTextColor(255,255,255);
-  doc.setFontSize(13);
-  doc.setFont('helvetica','bold');
-  doc.text('Performance Semanal', 14, 14);
-  const wkG = {};
-  raw.forEach(r => {
-    const wk = r.semana || 'N/A';
-    if (!wkG[wk]) wkG[wk] = {inv:0,cli:0,conv:0,rec:0,imp:0,n:r.semana_num||0};
-    wkG[wk].inv+=r.investimento||0; wkG[wk].cli+=r.cliques||0;
-    wkG[wk].conv+=r.conversoes||0; wkG[wk].rec+=r.receita||0; wkG[wk].imp+=r.impressoes||0;
-  });
-  const wkRows = Object.entries(wkG).sort((a,b)=>a[1].n-b[1].n).map(([wk,v]) => [
-    'Sem '+wk, fmt(v.inv,'$'), fmt(v.conv), fmt(v.conv?v.inv/v.conv:0,'$'), fmt(v.inv?v.rec/v.inv:0,'x'),
-  ]);
-  doc.autoTable({
-    startY: 26,
-    head: [['Semana','Investimento','Conversoes','CPA','ROAS']],
-    body: wkRows,
-    theme: 'grid',
-    headStyles: { fillColor: [139,92,246], textColor: 255, fontStyle: 'bold' },
-    styles: { fontSize: 9 },
-    margin: { left: 14, right: 14 },
-  });
+  doc.setFillColor(15,13,26);doc.rect(0,0,w,22,'F');
+  doc.setFillColor(124,58,237);doc.rect(0,20,w/2,2,'F');
+  doc.setFillColor(212,175,55);doc.rect(w/2,20,w/2,2,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('Performance Semanal',14,15);
 
-  doc.setTextColor(100,100,100);
-  doc.setFontSize(9);
-  doc.text('Cole este PDF na IA para analise automatica com graficos e recomendacoes.', 14, doc.lastAutoTable.finalY + 14);
+  const wg={};raw.forEach(r=>{const wk=r.semana||'N/A';if(!wg[wk])wg[wk]={inv:0,cli:0,conv:0,rec:0,imp:0,n:r.semana_num||0};
+    wg[wk].inv+=r.investimento||0;wg[wk].cli+=r.cliques||0;wg[wk].conv+=r.conversoes||0;wg[wk].rec+=r.receita||0;wg[wk].imp+=r.impressoes||0;});
+  const wr=Object.entries(wg).sort((a,b)=>a[1].n-b[1].n).map(([wk,v])=>['Sem '+wk,fmt(v.inv,'$'),fmt(v.conv),fmt(v.conv?v.inv/v.conv:0,'$'),fmt(v.inv?v.rec/v.inv:0,'x')]);
+  doc.autoTable({startY:28,head:[['Semana','Investimento','Conversoes','CPA','ROAS']],body:wr,theme:'grid',
+    headStyles:{fillColor:[124,58,237],textColor:255,fontStyle:'bold'},styles:{fontSize:9},margin:{left:14,right:14}});
 
-  doc.save(`relatorio-${client.name.replace(/\s+/g,'-').toLowerCase()}-${new Date().toISOString().slice(0,10)}.pdf`);
-});
+  doc.setTextColor(120,120,120);doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text('Cole este PDF na IA para analise automatica com graficos e recomendacoes.',14,doc.lastAutoTable.finalY+14);
 
-/* ── INIT ── */
-renderViewBtns();
+  doc.save(`engajamentes-${cl.name.replace(/\s+/g,'-').toLowerCase()}-${new Date().toISOString().slice(0,10)}.pdf`);
+};
+
+/* ══════════ INIT ══════════ */
+renderViews();
 </script>
 </body>
 </html>

@@ -18,9 +18,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-<!-- hCaptcha (Supabase usa hCaptcha) -->
-<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
-
 <!-- Boxicons -->
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
@@ -112,7 +109,6 @@ input:focus, select:focus { outline:none; border-color:var(--purple)!important; 
 }
 .error-msg { color:var(--red); font-size:12px; margin-top:10px; min-height:18px; }
 .success-msg { color:var(--green); font-size:12px; margin-top:10px; min-height:18px; }
-.login-box .h-captcha { margin:14px 0 6px; display:flex; justify-content:center; }
 .btn-main:disabled { opacity:.5; cursor:not-allowed; }
 .login-loading { display:none; color:var(--text-soft); font-size:12px; margin-top:8px; }
 .login-loading.show { display:block; }
@@ -288,9 +284,6 @@ input:focus, select:focus { outline:none; border-color:var(--purple)!important; 
     <input type="email" id="l-email" placeholder="E-mail">
     <input type="password" id="l-pass" placeholder="Senha">
 
-    <!-- hCaptcha: substitua o sitekey pelo seu (Supabase > Auth > Bot Protection) -->
-    <div class="h-captcha" data-sitekey="10000000-ffff-ffff-ffff-000000000001" data-theme="dark" id="captcha-box"></div>
-
     <button class="btn-main" id="btn-login">Entrar</button>
     <div class="login-loading" id="login-loading"><i class='bx bx-loader-alt'></i> Processando...</div>
     <button class="btn-link" id="btn-toggle-auth">Criar conta</button>
@@ -446,100 +439,102 @@ $('btn-login').onclick = async () => {
   showErr(''); showOk('');
   $('debug-box').classList.remove('show');
 
-  // Validacoes basicas
   if (!email) { showErr('Digite seu e-mail.'); return; }
   if (!pass) { showErr('Digite sua senha.'); return; }
   if (pass.length < 6) { showErr('A senha precisa ter no minimo 6 caracteres.'); return; }
-
-  // hCaptcha token (se o widget existir e estiver renderizado)
-  let captchaToken = null;
-  try {
-    if (typeof hcaptcha !== 'undefined') {
-      captchaToken = hcaptcha.getResponse();
-      if (!captchaToken) {
-        // Se o captcha nao tem resposta, pode ser que nao esteja habilitado no Supabase
-        // tenta sem captcha primeiro
-        captchaToken = null;
-      }
-    }
-  } catch(e) { /* hCaptcha nao carregou, prossegue sem */ }
 
   setLoading(true);
 
   try {
     let result;
-    const authOpts = { email, password: pass };
-
-    // Se tem captcha token, adiciona
-    if (captchaToken) {
-      authOpts.options = { captchaToken };
-    }
 
     if (isSignUp) {
-      result = await supabase.auth.signUp(authOpts);
+      result = await supabase.auth.signUp({ email, password: pass });
     } else {
-      result = await supabase.auth.signInWithPassword(authOpts);
+      result = await supabase.auth.signInWithPassword({ email, password: pass });
     }
 
-    const { data, error } = result;
+    // Mostra TUDO que o Supabase retornou no debug
+    showDebug({
+      action: isSignUp ? 'signUp' : 'signIn',
+      hasError: !!result.error,
+      errorMsg: result.error?.message || null,
+      errorStatus: result.error?.status || null,
+      errorCode: result.error?.code || null,
+      hasSession: !!result.data?.session,
+      hasUser: !!result.data?.user,
+      userEmail: result.data?.user?.email || null,
+      userConfirmed: result.data?.user?.confirmed_at || null,
+      fullError: result.error || null,
+    });
 
-    if (error) {
-      // Mapeamento completo de erros do Supabase
-      const msgs = {
-        'Invalid login credentials': 'E-mail ou senha incorretos.',
+    if (result.error) {
+      const msg = result.error.message || '';
+      const code = result.error.status || 0;
+
+      // Mapeamento de erros
+      const erros = {
+        'invalid login credentials': 'E-mail ou senha incorretos.',
         'invalid_credentials': 'E-mail ou senha incorretos.',
-        'Email not confirmed': 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.',
-        'User already registered': 'Este e-mail ja esta cadastrado. Clique em "Ja tenho conta".',
-        'Password should be at least 6 characters': 'A senha precisa ter pelo menos 6 caracteres.',
-        'Unable to validate email address: invalid format': 'Formato de e-mail invalido.',
-        'Signup requires a valid password': 'Digite uma senha valida.',
-        'captcha_failed': 'Verificacao do captcha falhou. Complete o captcha e tente novamente.',
-        'captcha verification process failed': 'Falha na verificacao do captcha. Tente novamente.',
-        'AuthApiError': 'Erro de autenticacao. Verifique seus dados.',
-        'over_request_rate_limit': 'Muitas tentativas. Aguarde 1 minuto e tente novamente.',
-        'request_timeout': 'Tempo esgotado. Verifique sua conexao e tente novamente.',
+        'email not confirmed': 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.',
+        'user already registered': 'E-mail ja cadastrado. Clique em "Ja tenho conta".',
+        'signup requires a valid password': 'Digite uma senha valida (min 6 caracteres).',
+        'unable to validate email': 'Formato de e-mail invalido.',
+        'password should be at least': 'Senha precisa ter pelo menos 6 caracteres.',
+        'over_request_rate_limit': 'Muitas tentativas. Aguarde 1 minuto.',
+        'rate limit': 'Muitas tentativas. Aguarde 1 minuto.',
+        'captcha': 'CAPTCHA ativo no Supabase. Desative em Auth > Bot Protection.',
+        'email rate limit': 'Limite de e-mails atingido. Aguarde alguns minutos.',
+        'email_address_invalid': 'E-mail invalido.',
+        'weak_password': 'Senha muito fraca.',
+        'same_password': 'Use uma senha diferente da atual.',
+        'email_exists': 'E-mail ja cadastrado.',
       };
 
-      // Tenta match exato, depois parcial
-      let friendlyMsg = msgs[error.message];
-      if (!friendlyMsg) {
-        for (const [key, val] of Object.entries(msgs)) {
-          if (error.message && error.message.toLowerCase().includes(key.toLowerCase())) {
-            friendlyMsg = val; break;
-          }
+      let friendlyMsg = null;
+      const msgLower = msg.toLowerCase();
+      for (const [key, val] of Object.entries(erros)) {
+        if (msgLower.includes(key.toLowerCase())) {
+          friendlyMsg = val;
+          break;
         }
       }
-      if (!friendlyMsg) friendlyMsg = error.message || 'Erro desconhecido ao autenticar.';
 
-      showErr(friendlyMsg);
-      showDebug({ code: error.status || error.code, message: error.message, hint: error.hint || null });
+      showErr(friendlyMsg || `Erro (${code}): ${msg}`);
 
-      // Reset captcha
-      try { if (typeof hcaptcha !== 'undefined') hcaptcha.reset(); } catch(e) {}
-
-    } else if (isSignUp && data?.user && !data.session) {
-      // Signup OK mas precisa confirmar email
+    } else if (isSignUp && result.data?.user && !result.data?.session) {
       showOk('Conta criada! Verifique seu e-mail para confirmar antes de entrar.');
-      try { if (typeof hcaptcha !== 'undefined') hcaptcha.reset(); } catch(e) {}
 
-    } else if (data?.session) {
-      // Login OK - o onAuthStateChange vai cuidar do resto
-      showOk('Conectado! Carregando dashboard...');
+    } else if (result.data?.session) {
+      showOk('Conectado! Carregando...');
+      // onAuthStateChange vai pegar automaticamente
+
+    } else {
+      // Caso estranho - sem erro mas sem session
+      showErr('Resposta inesperada do servidor. Veja os detalhes abaixo.');
     }
 
   } catch(e) {
     showErr('Erro de conexao: ' + e.message);
-    showDebug({ type: 'network_error', message: e.message, stack: e.stack });
+    showDebug({
+      type: 'EXCEPTION',
+      message: e.message,
+      name: e.name,
+      stack: e.stack,
+    });
   }
 
   setLoading(false);
 };
 
+// Enter para submeter
+$('l-pass').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-login').click(); });
+$('l-email').addEventListener('keydown', e => { if (e.key === 'Enter') $('l-pass').focus(); });
+
 $('btn-logout').onclick = async () => { await supabase.auth.signOut(); };
 
-// Listener de estado de autenticacao
 supabase.auth.onAuthStateChange((ev, session) => {
-  console.log('Auth event:', ev, session?.user?.email);
+  console.log('[AUTH]', ev, session?.user?.email || 'no user');
   currentUser = session?.user || null;
   if (currentUser) {
     $('login-screen').style.display = 'none';
